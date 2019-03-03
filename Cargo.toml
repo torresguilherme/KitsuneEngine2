@@ -1,0 +1,11 @@
+[package]
+name = "KitsuneEngine2"
+version = "0.1.0"
+authors = ["Guilherme Torres <guilhermetorres97@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+vulkano = "0.11"
+vulkano-shaders = "0.11"
+vulkano-win = "0.11"
+winit = "0.18"
