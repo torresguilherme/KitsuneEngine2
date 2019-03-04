@@ -1,5 +1,6 @@
 use std::ops;
 use std::f32;
+use super::vec2::Vec2;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Mat2 {
@@ -32,8 +33,25 @@ impl ops::Mul<Mat2> for Mat2 {
         for i in 0..2 {
             for j in 0..2 {
                 for k in 0..2 {
-                    ret[i][j] += self[i][k] * other[k][j]
+                    ret[i][j] += self[i][k] * other[k][j];
                 }
+            }
+        }
+
+        ret
+    }
+}
+
+impl ops::Mul<Vec2> for Mat2 {
+    type Output = Vec2;
+
+    fn mul(self, other: Vec2) -> Vec2 {
+        let mut ret = Vec2 {
+            x: 0.0, y: 0.0
+        };
+        for i in 0..2 {
+            for j in 0..2 {
+                ret[i] += self[i][j] * other[j];
             }
         }
 

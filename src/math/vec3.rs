@@ -9,6 +9,31 @@ pub struct Vec3 {
     pub z: f32
 }
 
+// indices
+impl ops::Index<usize> for Vec3 {
+    type Output = f32;
+
+    fn index<'a>(&'a self, index: usize) -> &'a f32 {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!()
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for Vec3 {
+    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut f32 {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!()
+        }
+    }
+}
+
 // add ops
 impl ops::Add for Vec3 {
     type Output = Vec3;

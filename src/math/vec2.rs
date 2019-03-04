@@ -8,6 +8,29 @@ pub struct Vec2 {
     pub y: f32
 }
 
+// indices
+impl ops::Index<usize> for Vec2 {
+    type Output = f32;
+
+    fn index<'a>(&'a self, index: usize) -> &f32 {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            _ => panic!()
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for Vec2 {
+    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut f32 {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            _ => panic!()
+        }
+    }
+}
+
 // add ops
 impl ops::Add for Vec2 {
     type Output = Vec2;

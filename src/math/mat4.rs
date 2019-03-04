@@ -1,5 +1,7 @@
 use std::ops;
 use std::f32;
+use super::vec3::Vec3;
+use super::quaternion::Quat;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Mat4 {
@@ -37,5 +39,46 @@ impl ops::Mul<Mat4> for Mat4 {
         }
 
         ret
+    }
+}
+
+// transforms
+impl Mat4 {
+    fn translate(&self, t: Vec3) {
+
+    }
+
+    fn rotate_x(&self, deg: f32) {
+
+    }
+
+    fn rotate_y(&self, deg: f32) {
+
+    }
+
+    fn rotate_z(&self, deg: f32) {
+
+    }
+
+    fn scale(&self, s: Vec3) {
+
+    }
+
+    // todo: shear?
+
+    fn euler_transform(&self, h: f32, p: f32, r: f32) {
+
+    }
+
+    fn orthographic_proj(&self, s: f32) {
+
+    }
+
+    fn perspective_proj(&self, s: f32) {
+
+    }
+
+    fn slerp(&self, q: Quat, r: Quat, t: f32) {
+
     }
 }
