@@ -49,8 +49,18 @@ impl Mat4 {
 
     }
 
-    fn transpose(&self) {
+    fn transpose(&self) ->Mat4 {
+        let mut ret = Mat4 {
+            mat: [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]
+        };
 
+        for i in 0..4 {
+            for j in 0..4 {
+                ret[i][j] = self[j][i];
+            }
+        }
+
+        ret
     }
 
     // transforms
@@ -151,14 +161,35 @@ impl Mat4 {
         self.rotate_y(h).rotate_x(p).rotate_z(r)
     }
 
-    fn orthographic_proj(&self, s: f32) {
+    // openGL orthographic projection matrix: depth mapped from -1 to 1
+    fn orthographic_proj(&self, top: f32, bottom: f32, left: f32, right: f32, near: f32, far: f32) -> Mat4 {
+        let o_mat = Mat4 {
+            mat: [
+                [2.0/(right-left), 0.0, 0.0, -(right+left)/(right-left)],
+                [0.0, 2.0/(top-bottom), 0.0, -(top+bottom)/(top-bottom)],
+                [0.0, 0.0, 2.0/(far-near), -(far+near)/(far-near)],
+                [0.0, 0.0, 0.0, 1.0]
+            ]
+        };
 
+        o_mat * self
     }
 
-    fn perspective_proj(&self, s: f32) {
+    // openGL perspective projection matrix
+    fn perspective_proj(&self, top: f32, bottom: f32, left: f32, right: f32, near: f32, far: f32) -> Mat4 {
+        let p_mat = Mat4 {
+            mat: [
+                [2.0*near/(right-left), 0.0, (right+left)/(right-left), 0.0],
+                [0.0, 2.0*near/(top-bottom), (top+bottom)/(top-bottom), 0.0],
+                [0.0, 0.0, -(far+near)/(far-near), -2.0*far*near/(far-near)],
+                [0.0, 0.0, -1.0, 0.0]
+            ]
+        };
 
+        p_mat * self
     }
 
+    // todo: if needed
     fn slerp(&self, q: Quat, r: Quat, t: f32) {
 
     }
