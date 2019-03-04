@@ -1,5 +1,6 @@
 use std::ops;
 use std::f32;
+use super::deg2rad;
 use super::vec3::Vec3;
 use super::quaternion::Quat;
 
@@ -23,10 +24,10 @@ impl ops::IndexMut<usize> for Mat4 {
 }
 
 // mul ops
-impl ops::Mul<Mat4> for Mat4 {
+impl ops::Mul<&Mat4> for Mat4 {
     type Output = Mat4;
 
-    fn mul(self, other: Mat4) -> Mat4 {
+    fn mul(self, other: &Mat4) -> Mat4 {
         let mut ret = Mat4 {
             mat: [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]
         };
@@ -42,32 +43,112 @@ impl ops::Mul<Mat4> for Mat4 {
     }
 }
 
-// transforms
 impl Mat4 {
-    fn translate(&self, t: Vec3) {
+    // todo, only if needed later
+    fn invert(&self) {
 
     }
 
-    fn rotate_x(&self, deg: f32) {
+    fn transpose(&self) {
 
     }
 
-    fn rotate_y(&self, deg: f32) {
+    // transforms
+    fn translate(&self, t: Vec3) -> Mat4 {
+        let t_mat = Mat4 {
+            mat: [
+                [1.0, 0.0, 0.0, t.x],
+                [0.0, 1.0, 0.0, t.y],
+                [0.0, 0.0, 1.0, t.z],
+                [0.0, 0.0, 0.0, 1.0]
+            ]
+        };
+
+        t_mat * self
+    }
+
+    fn rotate_x(&self, deg: f32) -> Mat4 {
+        let rad = deg2rad(deg);
+        let r_mat = Mat4 {
+            mat: [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, rad.cos(), -rad.sin(), 0.0],
+                [0.0, rad.sin(), rad.cos(), 0.0],
+                [0.0, 0.0, 0.0, 1.0]
+            ]
+        };
+
+        r_mat * self
+    }
+
+    fn rotate_y(&self, deg: f32) -> Mat4 {
+        let rad = deg2rad(deg);
+        let r_mat = Mat4 {
+            mat: [
+                [rad.cos(), 0.0, rad.sin(), 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [-rad.sin(), 0.0, rad.cos(), 0.0],
+                [0.0, 0.0, 0.0, 1.0]
+            ]
+        };
+
+        r_mat * self
+    }
+
+    fn rotate_z(&self, deg: f32) -> Mat4 {
+        let rad = deg2rad(deg);
+        let r_mat = Mat4 {
+            mat: [
+                [rad.cos(), -rad.sin(), 0.0, 0.0],
+                [rad.sin(), rad.cos(), 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0]
+            ]
+        };
+
+        r_mat * self
+    }
+
+    fn scale(&self, s: Vec3) -> Mat4 {
+        let s_mat = Mat4 {
+            mat: [
+                [s.x, 0.0, 0.0, 0.0],
+                [0.0, s.y, 0.0, 0.0],
+                [0.0, 0.0, s.z, 0.0],
+                [0.0, 0.0, 0.0, 1.0]
+            ]
+        };
+
+        s_mat * self
+    }
+
+    // todo: shear
+    fn shear_xy(&self, s: f32) {
 
     }
 
-    fn rotate_z(&self, deg: f32) {
-
+    fn shear_xz(&self, s: f32) {
+        
     }
 
-    fn scale(&self, s: Vec3) {
-
+    fn shear_yx(&self, s: f32) {
+        
     }
 
-    // todo: shear?
+    fn shear_yz(&self, s: f32) {
+        
+    }
 
-    fn euler_transform(&self, h: f32, p: f32, r: f32) {
+    fn shear_zx(&self, s: f32) {
+        
+    }
 
+    fn shear_zy(&self, s: f32) {
+        
+    }
+
+    fn euler_transform(&self, h: f32, p: f32, r: f32) -> Mat4 {
+        self.rotate_y(h).rotate_x(p).rotate_z(r)
     }
 
     fn orthographic_proj(&self, s: f32) {

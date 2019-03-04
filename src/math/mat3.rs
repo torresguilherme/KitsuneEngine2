@@ -22,10 +22,10 @@ impl ops::IndexMut<usize> for Mat3 {
 }
 
 // mul ops
-impl ops::Mul<Mat3> for Mat3 {
+impl ops::Mul<&Mat3> for Mat3 {
     type Output = Mat3;
 
-    fn mul(self, other: Mat3) -> Mat3 {
+    fn mul(self, other: &Mat3) -> Mat3 {
         let mut ret = Mat3 {
             mat: [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
         };
@@ -41,10 +41,10 @@ impl ops::Mul<Mat3> for Mat3 {
     }
 }
 
-impl ops::Mul<Vec3> for Mat3 {
+impl ops::Mul<&Vec3> for Mat3 {
     type Output = Vec3;
 
-    fn mul(self, other: Vec3) -> Vec3 {
+    fn mul(self, other: &Vec3) -> Vec3 {
         let mut ret = Vec3 {
             x: 0.0, y: 0.0, z: 0.0
         };
