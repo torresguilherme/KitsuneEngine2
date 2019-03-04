@@ -19,3 +19,23 @@ impl ops::IndexMut<usize> for Mat3 {
         &mut self.mat[index]
     }
 }
+
+// mul ops
+impl ops::Mul<Mat3> for Mat3 {
+    type Output = Mat3;
+
+    fn mul(self, other: Mat3) -> Mat3 {
+        let mut ret = Mat3 {
+            mat: [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+        };
+        for i in 0..3 {
+            for j in 0..3 {
+                for k in 0..3 {
+                    ret[i][j] += self[i][k] * other[k][j]
+                }
+            }
+        }
+
+        ret
+    }
+}
