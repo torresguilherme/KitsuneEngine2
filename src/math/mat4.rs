@@ -45,11 +45,11 @@ impl ops::Mul<&Mat4> for Mat4 {
 
 impl Mat4 {
     // todo, only if needed later
-    fn invert(&self) {
+    pub fn invert(&self) {
 
     }
 
-    fn transpose(&self) ->Mat4 {
+    pub fn transpose(&self) ->Mat4 {
         let mut ret = Mat4 {
             mat: [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]
         };
@@ -64,7 +64,7 @@ impl Mat4 {
     }
 
     // transforms
-    fn translate(&self, t: Vec3) -> Mat4 {
+    pub fn translate(&self, t: Vec3) -> Mat4 {
         let t_mat = Mat4 {
             mat: [
                 [1.0, 0.0, 0.0, t.x],
@@ -77,7 +77,7 @@ impl Mat4 {
         t_mat * self
     }
 
-    fn rotate_x(&self, deg: f32) -> Mat4 {
+    pub fn rotate_x(&self, deg: f32) -> Mat4 {
         let rad = deg2rad(deg);
         let r_mat = Mat4 {
             mat: [
@@ -91,7 +91,7 @@ impl Mat4 {
         r_mat * self
     }
 
-    fn rotate_y(&self, deg: f32) -> Mat4 {
+    pub fn rotate_y(&self, deg: f32) -> Mat4 {
         let rad = deg2rad(deg);
         let r_mat = Mat4 {
             mat: [
@@ -105,7 +105,7 @@ impl Mat4 {
         r_mat * self
     }
 
-    fn rotate_z(&self, deg: f32) -> Mat4 {
+    pub fn rotate_z(&self, deg: f32) -> Mat4 {
         let rad = deg2rad(deg);
         let r_mat = Mat4 {
             mat: [
@@ -119,7 +119,7 @@ impl Mat4 {
         r_mat * self
     }
 
-    fn scale(&self, s: Vec3) -> Mat4 {
+    pub fn scale(&self, s: Vec3) -> Mat4 {
         let s_mat = Mat4 {
             mat: [
                 [s.x, 0.0, 0.0, 0.0],
@@ -133,36 +133,36 @@ impl Mat4 {
     }
 
     // todo: shear
-    fn shear_xy(&self, s: f32) {
+    pub fn shear_xy(&self, s: f32) {
 
     }
 
-    fn shear_xz(&self, s: f32) {
+    pub fn shear_xz(&self, s: f32) {
         
     }
 
-    fn shear_yx(&self, s: f32) {
+    pub fn shear_yx(&self, s: f32) {
         
     }
 
-    fn shear_yz(&self, s: f32) {
+    pub fn shear_yz(&self, s: f32) {
         
     }
 
-    fn shear_zx(&self, s: f32) {
+    pub fn shear_zx(&self, s: f32) {
         
     }
 
-    fn shear_zy(&self, s: f32) {
+    pub fn shear_zy(&self, s: f32) {
         
     }
 
-    fn euler_transform(&self, h: f32, p: f32, r: f32) -> Mat4 {
+    pub fn euler_transform(&self, h: f32, p: f32, r: f32) -> Mat4 {
         self.rotate_y(h).rotate_x(p).rotate_z(r)
     }
 
     // openGL orthographic projection matrix: depth mapped from -1 to 1
-    fn orthographic_proj(&self, top: f32, bottom: f32, left: f32, right: f32, near: f32, far: f32) -> Mat4 {
+    pub fn orthographic_proj(&self, top: f32, bottom: f32, left: f32, right: f32, near: f32, far: f32) -> Mat4 {
         let o_mat = Mat4 {
             mat: [
                 [2.0/(right-left), 0.0, 0.0, -(right+left)/(right-left)],
@@ -176,7 +176,7 @@ impl Mat4 {
     }
 
     // openGL perspective projection matrix
-    fn perspective_proj(&self, top: f32, bottom: f32, left: f32, right: f32, near: f32, far: f32) -> Mat4 {
+    pub fn perspective_proj(&self, top: f32, bottom: f32, left: f32, right: f32, near: f32, far: f32) -> Mat4 {
         let p_mat = Mat4 {
             mat: [
                 [2.0*near/(right-left), 0.0, (right+left)/(right-left), 0.0],
@@ -190,7 +190,7 @@ impl Mat4 {
     }
 
     // todo: if needed
-    fn slerp(&self, q: Quat, r: Quat, t: f32) {
+    pub fn slerp(&self, q: Quat, r: Quat, t: f32) {
 
     }
 }
