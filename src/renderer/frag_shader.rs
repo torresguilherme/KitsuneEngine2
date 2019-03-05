@@ -1,1 +1,4 @@
-// todo
+pub struct FragmentShader {
+
+}
+
