@@ -37,7 +37,7 @@ impl GameWindow {
     }
 
     pub fn update(&mut self) {
-        self.canvas.set_draw_color(Color::RGB(255, 64, 255));
+        self.canvas.set_draw_color(Color::RGB(0, 0, 0));
         self.canvas.clear();
         for event in self.event_pump.poll_iter() {
             match event {

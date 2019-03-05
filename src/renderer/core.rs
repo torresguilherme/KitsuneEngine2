@@ -5,6 +5,8 @@ use super::mesh::Mesh;
 use crate::display::game_window::GameWindow;
 
 use vulkano::pipeline::shader::ShaderModule;
+use vulkano::pipeline::GraphicsPipeline;
+use vulkano::framebuffer::Subpass;
 
 use vulkano::instance::Instance;
 use vulkano::instance::InstanceExtensions;
@@ -45,8 +47,12 @@ mod fs {
 pub struct Core<'a> {
     meshes: Vec<&'a Mesh>,
     // todo add materials assigned to each mesh
+
+    // shaders
     fragment_shader: fs::Shader,
     vertex_shader: vs::Shader,
+
+    // vulkan structures
     instance: Arc<Instance>,
     device: Arc<Device>
 }
