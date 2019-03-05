@@ -9,5 +9,7 @@ use crate::display::game_window::GameWindow;
 
 fn main() {
     let mut main_window = GameWindow::new("KitsuneEngine test", 800, 600);
-    main_window.update();
+    while(!main_window.closed) {
+        main_window.update();
+    }
 }

@@ -10,7 +10,8 @@ pub struct GameWindow {
     sdl_context: Sdl,
     video_subsystem: VideoSubsystem,
     canvas: Canvas<Window>,
-    event_pump: EventPump
+    event_pump: EventPump,
+    pub closed: bool
 }
 
 impl GameWindow {
@@ -31,24 +32,21 @@ impl GameWindow {
             sdl_context: sdl_context,
             video_subsystem: video_subsystem,
             canvas: canvas,
-            event_pump: event_pump
+            event_pump: event_pump,
+            closed: false
         }
     }
 
     pub fn update(&mut self) {
-        let mut i = 0;
-        'running: loop {
-            i = (i + 1) % 255;
-            self.canvas.set_draw_color(Color::RGB(i, 64, 255-i));
-            self.canvas.clear();
-            for event in self.event_pump.poll_iter() {
-                match event {
-                    Event::Quit {..} => { break 'running },
-                    _ => {}
-                }
+        self.canvas.set_draw_color(Color::RGB(255, 64, 255));
+        self.canvas.clear();
+        for event in self.event_pump.poll_iter() {
+            match event {
+                Event::Quit {..} => { self.closed = true },
+                _ => {}
             }
-
-            self.canvas.present();
         }
+
+        self.canvas.present();
     }
 }
