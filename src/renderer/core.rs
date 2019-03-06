@@ -1,20 +1,53 @@
-use std::sync::Arc;
-
 use super::mesh::Mesh;
 
 use crate::display::game_window::GameWindow;
 
-use vulkano::pipeline::shader::ShaderModule;
-use vulkano::pipeline::GraphicsPipeline;
-use vulkano::framebuffer::Subpass;
+use std::sync::Arc;
+use std::collections::HashSet;
 
-use vulkano::instance::Instance;
-use vulkano::instance::InstanceExtensions;
-use vulkano::instance::PhysicalDevice;
+use vulkano_win::VkSurfaceBuild;
 
-use vulkano::device::Device;
-use vulkano::device::DeviceExtensions;
-use vulkano::device::Features;
+use vulkano::instance::{
+    Instance,
+    InstanceExtensions,
+    ApplicationInfo,
+    Version,
+    layers_list,
+    PhysicalDevice,
+};
+use vulkano::instance::debug::{DebugCallback, MessageTypes};
+use vulkano::device::{Device, DeviceExtensions, Queue, Features};
+use vulkano::swapchain::{
+    Surface,
+    Capabilities,
+    ColorSpace,
+    SupportedPresentModes,
+    PresentMode,
+    Swapchain,
+    CompositeAlpha,
+    acquire_next_image,
+};
+use vulkano::format::Format;
+use vulkano::image::{ImageUsage, swapchain::SwapchainImage};
+use vulkano::sync::{SharingMode, GpuFuture};
+use vulkano::pipeline::{
+    GraphicsPipeline,
+    vertex::BufferlessDefinition,
+    vertex::BufferlessVertices,
+    viewport::Viewport,
+};
+use vulkano::framebuffer::{
+    RenderPassAbstract,
+    Subpass,
+    FramebufferAbstract,
+    Framebuffer,
+};
+use vulkano::descriptor::PipelineLayoutAbstract;
+use vulkano::command_buffer::{
+    AutoCommandBuffer,
+    AutoCommandBufferBuilder,
+    DynamicState,
+};
 
 mod vs {
     vulkano_shaders::shader!{
@@ -44,6 +77,29 @@ mod fs {
     }
 }
 
+#[cfg(all(debug_assertions))]
+const ENABLE_VALIDATION_LAYERS: bool = true;
+#[cfg(not(debug_assertions))]
+const ENABLE_VALIDATION_LAYERS: bool = false;
+
+struct QueueFamilyIndices {
+    graphics_family: i32,
+    present_family: i32
+}
+
+impl QueueFamilyIndices {
+    fn new() -> Self {
+        Self {
+            graphics_family: -1,
+            present_family: -1
+        }
+    }
+
+    fn is_complete(&self) -> bool {
+        self.graphics_family >= 0 && self.present_family >= 0
+    }
+}
+
 pub struct Core<'a> {
     meshes: Vec<&'a Mesh>,
     // todo add materials assigned to each mesh
@@ -54,7 +110,8 @@ pub struct Core<'a> {
 
     // vulkan structures
     instance: Arc<Instance>,
-    device: Arc<Device>
+    device: Arc<Device>,
+    debug_callback: Option<DebugCallback>
 }
 
 impl<'a> Core<'a> {
@@ -81,14 +138,34 @@ impl<'a> Core<'a> {
         let fragment_shader = fs::Shader::load(device.clone()).expect("failed to create shader module");
         let vertex_shader = vs::Shader::load(device.clone()).expect("failed to create shader module");
 
+        let debug_callback = Self::setup_debug_callback(&instance);
+
         Core {
             meshes: Vec::new(),
-            fragment_shader: fragment_shader,
-            vertex_shader: vertex_shader,
-            instance: instance,
-            device: device
+            fragment_shader,
+            vertex_shader,
+            instance,
+            device,
+            debug_callback
         }
     }
+
+    fn setup_debug_callback(instance: &Arc<Instance>) -> Option<DebugCallback> {
+        if !ENABLE_VALIDATION_LAYERS  {
+            return None;
+        }
+
+        let msg_types = MessageTypes {
+            error: true,
+            warning: true,
+            performance_warning: true,
+            information: false,
+            debug: true,
+        };
+        DebugCallback::new(&instance, msg_types, |msg| {
+            println!("validation layer: {:?}", msg.description);
+        }).ok()
+}
 
     pub fn add_new(&mut self, n_mesh: &'a Mesh) {
         self.meshes.push(n_mesh);
