@@ -1,4 +1,5 @@
 use super::mesh::Mesh;
+use crate::math::vec3::Vec3;
 
 use std::sync::Arc;
 use std::collections::HashSet;
@@ -47,6 +48,7 @@ use vulkano::command_buffer::{
     AutoCommandBufferBuilder,
     DynamicState,
 };
+use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
 
 mod vs {
     vulkano_shaders::shader!{
@@ -120,6 +122,9 @@ pub struct Core<'a> {
     fragment_shader: fs::Shader,
     vertex_shader: vs::Shader,
 
+    // VAO & VBO
+    vertex_buffers: Vec<Arc<CpuAccessibleBuffer<Vec3>>>,
+
     // vulkan structures
     instance: Arc<Instance>,
     debug_callback: Option<DebugCallback>,
@@ -137,7 +142,6 @@ pub struct Core<'a> {
     swap_chain_images: Vec<Arc<SwapchainImage<Window>>>,
 
     render_pass: Arc<RenderPassAbstract + Send + Sync>,
-    graphics_pipeline: Arc<ConcreteGraphicsPipeline>,
 
     swap_chain_framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
 
@@ -181,7 +185,6 @@ impl<'a> Core<'a> {
             &device, &graphics_queue, &present_queue, width, height);
         
         let render_pass = Self::create_render_pass(&device, swap_chain.format());
-        let graphics_pipeline = Self::create_graphics_pipeline(&device, swap_chain.dimensions(), &render_pass, &fragment_shader, &vertex_shader);
 
         let swap_chain_framebuffers = Self::create_framebuffers(&swap_chain_images, &render_pass);
 
@@ -189,20 +192,27 @@ impl<'a> Core<'a> {
             meshes: Vec::new(),
             fragment_shader,
             vertex_shader,
+            vertex_buffers: vec![],
+
             instance,
             debug_callback,
+
             events_loop,
             surface,
+
             physical_device_index,
             device,
             graphics_queue,
             present_queue,
+
             swap_chain,
             swap_chain_images,
+
             render_pass,
-            graphics_pipeline,
             swap_chain_framebuffers,
+
             command_buffers: vec![],
+
             done: false
         };
 
@@ -470,6 +480,7 @@ impl<'a> Core<'a> {
     }
 
     fn create_graphics_pipeline(
+        &self,
         device: &Arc<Device>,
         swap_chain_extent: [u32; 2],
         render_pass: &Arc<RenderPassAbstract + Send + Sync>,
@@ -484,7 +495,7 @@ impl<'a> Core<'a> {
         };
 
         Arc::new(GraphicsPipeline::start()
-            .vertex_input(BufferlessDefinition {})
+            .vertex_input(self.vertex_buffers)
             .vertex_shader(vert_shader_module.main_entry_point(), ())
             .triangle_list()
             .primitive_restart(false)
@@ -523,6 +534,7 @@ impl<'a> Core<'a> {
     *********************************/
 
     fn create_command_buffers(&mut self) {
+        let graphics_pipeline = self.create_graphics_pipeline(&self.device, self.swap_chain.dimensions(), &self.render_pass, &self.fragment_shader, &self.vertex_shader);
         let queue_family = self.graphics_queue.family();
         self.command_buffers = self.swap_chain_framebuffers.iter()
             .map(|framebuffer| {
@@ -531,7 +543,7 @@ impl<'a> Core<'a> {
                     .unwrap()
                     .begin_render_pass(framebuffer.clone(), false, vec![[0.0, 0.0, 0.0, 1.0].into()])
                     .unwrap()
-                    .draw(self.graphics_pipeline.clone(), &DynamicState::none(),
+                    .draw(graphics_pipeline.clone(), &DynamicState::none(),
                         vertices, (), ())
                     .unwrap()
                     .end_render_pass()
@@ -563,6 +575,12 @@ impl<'a> Core<'a> {
 
     pub fn add_new(&mut self, n_mesh: &'a Mesh) {
         self.meshes.push(n_mesh);
+
+        impl_vertex!(Vec3);
+        let new_vertex_buffer = CpuAccessibleBuffer::from_iter(self.device.clone(), BufferUsage::all(),
+            n_mesh.vertices.iter().cloned()).unwrap();
+        
+        self.vertex_buffers.push(new_vertex_buffer);
     }
 
     pub fn render(&mut self) {

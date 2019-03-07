@@ -1,12 +1,12 @@
 use crate::math::vec3::Vec3;
 
 pub struct Mesh {
-    vertices: Vec<Vec3>,
-    indices: Vec<u32>,
-    uvs: Vec<Vec3>,
-    uv_indices: Vec<u32>,
-    normals: Vec<Vec3>,
-    normal_indices: Vec<u32>
+    pub vertices: Vec<Vec3>,
+    pub indices: Vec<u32>,
+    pub uvs: Vec<Vec3>,
+    pub uv_indices: Vec<u32>,
+    pub normals: Vec<Vec3>,
+    pub normal_indices: Vec<u32>
 }
 
 impl Mesh {
