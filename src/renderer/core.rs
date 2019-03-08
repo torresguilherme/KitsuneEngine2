@@ -26,6 +26,7 @@ use vulkano::swapchain::{
     Swapchain,
     CompositeAlpha,
     acquire_next_image,
+    AcquireError
 };
 use vulkano::format::Format;
 use vulkano::image::{ImageUsage, swapchain::SwapchainImage};
@@ -138,6 +139,9 @@ pub struct Core<'a> {
     // VAO & VBO
     vertex_buffers: Vec<Arc<BufferAccess + Send + Sync>>,
 
+    width: u32,
+    height: u32,
+
     // vulkan structures
     instance: Arc<Instance>,
     debug_callback: Option<DebugCallback>,
@@ -171,22 +175,6 @@ impl<'a> Core<'a> {
     pub fn new(name: &str, width: u32, height: u32) -> Core<'a> {
         // creating vulkan instance and checking for drivers
         let instance = Self::create_instance();
-        /*    
-        let physical_device = PhysicalDevice::enumerate(&instance).next().expect("there are no devices that support vulkan.");
-
-        // enumerates family queues, creates an device associated to a family that supports graphics operations
-        for family in physical_device.queue_families() {
-            println!("a family queue with {:?} families was found!", family.queues_count());
-        }
-
-        let queue_family = physical_device.queue_families()
-            .find(|&q| q.supports_graphics())
-            .expect("error: none of the queue families support graphical operations");
-        
-        println!("the chosen family queue has {:?} queues", queue_family.queues_count());
-        let (device, mut queues) = Device::new(physical_device, &Features::none(), &DeviceExtensions::none(), 
-            [(queue_family, 0.5)].iter().cloned()).expect("error: creating the device wasn't possible!");
-        */
         let debug_callback = Self::setup_debug_callback(&instance);
         let (events_loop, surface) = Self::create_surface(&instance, name, width, height);
 
@@ -199,7 +187,7 @@ impl<'a> Core<'a> {
         let vertex_shader = vs::Shader::load(device.clone()).expect("failed to create shader module");
 
         let (swap_chain, swap_chain_images) = Self::create_swap_chain(&instance, &surface, physical_device_index,
-            &device, &graphics_queue, &present_queue, width, height);
+            &device, &graphics_queue, &present_queue, width, height, None);
         
         let render_pass = Self::create_render_pass(&device, swap_chain.format());
         let graphics_pipeline = Self::create_graphics_pipeline(&device, swap_chain.dimensions(), &render_pass, &fragment_shader, &vertex_shader);
@@ -213,6 +201,8 @@ impl<'a> Core<'a> {
             fragment_shader,
             vertex_shader,
             vertex_buffers: vec![],
+            width,
+            height,
 
             instance,
             debug_callback,
@@ -438,7 +428,8 @@ impl<'a> Core<'a> {
         graphics_queue: &Arc<Queue>,
         present_queue: &Arc<Queue>,
         width: u32,
-        height: u32
+        height: u32, 
+        old_swapchain: Option<Arc<Swapchain<Window>>>
     ) -> (Arc<Swapchain<Window>>, Vec<Arc<SwapchainImage<Window>>>) {
         let physical_device = PhysicalDevice::from_index(&instance, physical_device_index).unwrap();
         let capabilities = surface.capabilities(physical_device)
@@ -479,7 +470,7 @@ impl<'a> Core<'a> {
             CompositeAlpha::Opaque,
             present_mode,
             true, // clipped
-            None,
+            old_swapchain.as_ref()
         ).expect("failed to create swap chain!");
 
         (swap_chain, images)
@@ -561,7 +552,6 @@ impl<'a> Core<'a> {
     *********************************/
 
     pub fn create_command_buffers(&mut self) {
-        println!("{}", self.vertex_buffers.len());
         let queue_family = self.graphics_queue.family();
         self.command_buffers = self.swap_chain_framebuffers.iter()
             .map(|framebuffer| {
@@ -579,19 +569,60 @@ impl<'a> Core<'a> {
             .collect();
     }
 
+    fn recreate_swap_chain(&mut self) {
+        let (swap_chain, images) = Self::create_swap_chain(&self.instance, &self.surface, self.physical_device_index,
+            &self.device, &self.graphics_queue, &self.present_queue, self.width, self.height, Some(self.swap_chain.clone()));
+        self.swap_chain = swap_chain;
+        self.swap_chain_images = images;
+
+        self.render_pass = Self::create_render_pass(&self.device, self.swap_chain.format());
+        self.graphics_pipeline = Self::create_graphics_pipeline(&self.device, self.swap_chain.dimensions(),
+            &self.render_pass, &self.fragment_shader, &self.vertex_shader);
+        self.swap_chain_framebuffers = Self::create_framebuffers(&self.swap_chain_images, &self.render_pass);
+        self.create_command_buffers();
+    }
+
     fn draw_frame(&mut self) {
-        let (image_index, acquire_future) = acquire_next_image(self.swap_chain.clone(), None).unwrap();
+        self.previous_frame_end.as_mut().unwrap().cleanup_finished();
+
+        if self.recreate_swap_chain {
+            self.recreate_swap_chain();
+            self.recreate_swap_chain = false;
+        }
+
+        let (image_index, acquire_future) = match acquire_next_image(self.swap_chain.clone(), None) {
+            Ok(r) => r,
+            Err(AcquireError::OutOfDate) => {
+                self.recreate_swap_chain = true;
+                return;
+            },
+            Err(err) => panic!("unexpected error when acquiring next image: {:?}", err)
+        };
 
         let command_buffer = self.command_buffers[image_index].clone();
 
-        let future = acquire_future
+        let future = self.previous_frame_end.take().unwrap()
+            .join(acquire_future)
             .then_execute(self.graphics_queue.clone(), command_buffer)
             .unwrap()
             .then_swapchain_present(self.present_queue.clone(), self.swap_chain.clone(), image_index)
-            .then_signal_fence_and_flush()
-            .unwrap();
+            .then_signal_fence_and_flush();
 
-        future.wait(None).unwrap();
+        match future {
+            Ok(future) => {
+                self.previous_frame_end = Some(Box::new(future) as Box<_>);
+            }
+            Err(vulkano::sync::FlushError::OutOfDate) => {
+                self.recreate_swap_chain = true;
+                self.previous_frame_end
+                    = Some(Box::new(vulkano::sync::now(self.device.clone())) as Box<_>);
+            }
+            Err(e) => {
+                println!("{:?}", e);
+                self.previous_frame_end
+                    = Some(Box::new(vulkano::sync::now(self.device.clone())) as Box<_>);
+            }
+        }
     }
 
     /*********************************
