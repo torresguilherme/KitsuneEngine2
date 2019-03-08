@@ -25,6 +25,7 @@ fn main() {
         vec![]
     );
     core_renderer.add_new(&triangle);
+    core_renderer.create_command_buffers();
     while !core_renderer.done {
         core_renderer.render();
     }
